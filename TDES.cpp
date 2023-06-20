@@ -2,20 +2,20 @@
 #include <string.h>
 #include <math.h>
 #include <malloc.h>
-typedef unsigned char BYTE;
-typedef struct
+typedef unsigned char BYTE; //1 바이트 unsigned char 를 이용해 각각의 비트 조작
+typedef struct 
 {
     int r;
     int c;
 } RC;
-RC getRC(int n)
+RC getRC(int n) //바이트로 구성된 비트 배열에서 특정 비트를 찾아주는 함수. r 은 바이트의 위치, c 는 바이트 내 비트 위치
 {
     RC ret;
     ret.r = n / 8;
     ret.c = 7 - n % 8;
     return ret;
 }
-int ipow(int base, int exp)
+int ipow(int base, int exp) //거듭제곱
 {
     int result = 1;
     for (;;)
@@ -30,7 +30,7 @@ int ipow(int base, int exp)
 
     return result;
 }
-int getBit(BYTE bit, int n)
+int getBit(BYTE bit, int n) //바이트 내에서 비트 하나를 가져옴
 {
     BYTE ret = 0x00;
     ret = bit & (0x01 << n);
@@ -40,7 +40,7 @@ int getBit(BYTE bit, int n)
     }
     return ret;
 }
-void setBit(BYTE *bit, int val, int n)
+void setBit(BYTE *bit, int val, int n)//바이트 내에서 비트 하나를 설정
 {
     if (val == 1)
     {
@@ -51,7 +51,7 @@ void setBit(BYTE *bit, int val, int n)
         *bit = (*bit) | 0x00 << n;
     }
 }
-int checkParity(BYTE *bits)
+int checkParity(BYTE *bits) //패리티 비트 확인. 사용하지 않음
 {
     for (int i = 0; i < 8; i++)
     {
@@ -80,7 +80,7 @@ int checkParity(BYTE *bits)
     }
     return 1;
 }
-void printBits(BYTE *bits, int bytes)
+void printBits(BYTE *bits, int bytes) //개별 비트 출력 함수
 {
     printf("==========\n");
     for (int i = 0; i < bytes; i++)
@@ -93,7 +93,7 @@ void printBits(BYTE *bits, int bytes)
         printf("\n");
     }
 }
-void printHex(BYTE *bits, int bytes)
+void printHex(BYTE *bits, int bytes) //16진수로 바이트 출력
 {
     for (int i = 0; i < bytes; i++)
     {
@@ -101,7 +101,7 @@ void printHex(BYTE *bits, int bytes)
     }
     printf("\n");
 }
-void PBox(BYTE *inp, int size_bytes, int *table)
+void PBox(BYTE *inp, int size_bytes, int *table) //목표블록, 블록크기.테이블을 입력받으면 P-Box 전치함수 기능을 수행. DES 에서 E, Q, Initial Permutation, Inverse Initial Permutation, PC1, PC2 함수에서 이용
 {
     BYTE dest[8] = {0};
     for (int i = 0; i < size_bytes * 8; i++)
@@ -114,14 +114,14 @@ void PBox(BYTE *inp, int size_bytes, int *table)
     }
     memcpy(inp, dest, sizeof(BYTE) * size_bytes);
 }
-void RHL(BYTE *inp, int round)
+void RHL(BYTE *inp, int round) //key scheduling 시 이용하는 함수. 블록을 반으로 나눠 비트를 몇칸씩 옮김. round 에 따라 몇칸 이동하는지 달라짐
 {
     int R[16] = {1, 1, 2, 2, 2, 2, 2, 2, 1, 2, 2, 2, 2, 2, 2, 1};
     int n = R[round];
     if (n == 1)
     {
         BYTE dest[7] = {0};
-        int temp1 = getBit(*(inp + getRC(0).r), getRC(0).c);
+        int temp1 = getBit(*(inp + getRC(0).r), getRC(0).c); 
         int temp2 = getBit(*(inp + getRC(28).r), getRC(28).c);
         for (int i = 0; i < 27; i++)
         {
@@ -172,7 +172,7 @@ void RHL(BYTE *inp, int round)
         memcpy(inp, dest, sizeof(dest));
     }
 }
-void SBox(BYTE *inp)
+void SBox(BYTE *inp) //S-Box 함수. 48비트를 입력받아 S1,S2,S3....S8 까지 모두 수행하고 결과를 종합해 32비트로 출력 
 {
     BYTE sn[8][4][16] = {{{14, 4, 13, 1, 2, 15, 11, 8, 3, 10, 6, 12, 5, 9, 0, 7}, {0, 15, 7, 4, 14, 2, 13, 1, 10, 6, 12, 11, 9, 5, 3, 8}, {4, 1, 14, 8, 13, 6, 2, 11, 15, 12, 9, 7, 3, 10, 5, 0}, {15, 12, 8, 2, 4, 9, 1, 7, 5, 11, 3, 14, 10, 0, 6, 13}},
                          {{15, 1, 8, 14, 6, 11, 3, 4, 9, 7, 2, 13, 12, 0, 5, 10}, {3, 13, 4, 7, 15, 2, 8, 14, 12, 0, 1, 10, 6, 9, 11, 5}, {0, 14, 7, 11, 10, 4, 13, 1, 5, 8, 12, 6, 9, 3, 2, 15}, {13, 8, 10, 1, 3, 15, 4, 2, 11, 6, 7, 12, 0, 5, 14, 9}},
@@ -205,8 +205,9 @@ void SBox(BYTE *inp)
     }
     memcpy(inp, dest, sizeof(dest));
 }
-void DES(BYTE *input, BYTE *key, int mode)
+void DES(BYTE *input, BYTE *key, int mode) //DES 수행. mode 가 0 이면 encrypt, 1 이면 decrypt
 {
+    //필요한 P-Box 테이블 정의
     int PC1Table[56] = {57, 49, 41, 33, 25, 17, 9,
                         1, 58, 50, 42, 34, 26, 18,
                         10, 2, 59, 51, 43, 35, 27,
@@ -259,11 +260,10 @@ void DES(BYTE *input, BYTE *key, int mode)
                        61, 53, 45, 37, 29, 21, 13, 5,
                        63, 55, 47, 39, 31, 23, 15, 7};
 
-    PBox(input, 8, IPTable);
-    // printBits(input, 8);
+    PBox(input, 8, IPTable); //Initial Permutation 수행
     BYTE LPT[6];
     BYTE RPT[6];
-    memcpy(LPT, input, sizeof(LPT));
+    memcpy(LPT, input, sizeof(LPT)); 
     memcpy(RPT, input + 4, sizeof(RPT));
     BYTE keys[16][6];
     BYTE key1_temp[8];
@@ -271,22 +271,26 @@ void DES(BYTE *input, BYTE *key, int mode)
     BYTE L[6];
     BYTE R[6];
 
-    memcpy(L, LPT, sizeof(L));
+    memcpy(L, LPT, sizeof(L));  //결과를 32비트씩 L 과 R 로 나눠 저장
     memcpy(R, RPT, sizeof(RPT));
+   
 
+    //Key scheduler (key generator) 부분
     memcpy(key1_temp, key, sizeof(key1_temp));
-    PBox(key1_temp, 7, PC1Table);
+    PBox(key1_temp, 7, PC1Table); //key scheduling 에 필요한 PC1 수행
 
     printf("\ninput after initial permutation : ");
     printHex(input,8);
     for (int i = 0; i < 16; i++)
     {
-        RHL(key1_temp, i);
+        RHL(key1_temp, i); //순환이동
         BYTE buffer[7];
-        memcpy(buffer, key1_temp, sizeof(buffer));
-        PBox(buffer, 6, PC2Table);
+        memcpy(buffer, key1_temp, sizeof(buffer)); 
+        PBox(buffer, 6, PC2Table); //key scheduling 에 필요한 PC2 수행
         memcpy(keys[i], buffer, sizeof(keys[i]));
     }
+
+    //실제 DES 수행
     for (int i = 0; i < 16; i++)
     {
         int a;
@@ -298,18 +302,18 @@ void DES(BYTE *input, BYTE *key, int mode)
         printHex(keys[a], 7);
         BYTE temp[6];
         memcpy(temp, R, sizeof(L));
-        PBox(temp, 6, E);
-        for (int j = 0; j < 6; j++)
+        PBox(temp, 6, E); //E 수행
+        for (int j = 0; j < 6; j++) //키값과 E의 결과값 XOR
         {
-            temp[j] ^= keys[a][j];
+            temp[j] ^= keys[a][j]; 
         }
-        SBox(temp);
-        PBox(temp, 4, Q);
-        for (int j = 0; j < 6; j++)
+        SBox(temp); //S-Box 수행
+        PBox(temp, 4, Q); //Q (문서에는 P 라 나옴) 수행. 이 결과값이 F 함수의 결과값
+        for (int j = 0; j < 6; j++) // F 함수의 결과값과 Left block XOR
         {
             temp[j] ^= L[j];
         }
-        if (i == 15)
+        if (i == 15) //특수케이스 마지막 단계일 경우 f 값만 L 에 저장하고 끝
         {
             memcpy(L, temp, sizeof(L));
                             
@@ -319,8 +323,9 @@ void DES(BYTE *input, BYTE *key, int mode)
             printHex(R,4);
             break;
         }
-
+        //L 에는 이전 R 저장
         memcpy(L, R, sizeof(L));
+        //F 함수의 결과값과 Left block XOR 한 값 R 에 저장
         memcpy(R, temp, sizeof(R));
                 
         printf("Left block after round %d : ",i+1);
@@ -330,11 +335,11 @@ void DES(BYTE *input, BYTE *key, int mode)
     }
     memcpy(input, L, sizeof(BYTE[4]));
     memcpy(input + 4, R, sizeof(BYTE[4]));
-    PBox(input, 8, IPRevTable);
+    PBox(input, 8, IPRevTable); //마지막으로 Inverse Initial Permutation 수행
     printf("\nDone after reverse permutation. Block result is :");
     printHex(input,8);
 }
-int isValidSize(FILE *f)
+int isValidSize(FILE *f) //입력파일이 8바이트인지 확인
 {
     fseek(f, 0, SEEK_END); // seek to end of file
     int size = ftell(f);
@@ -433,7 +438,8 @@ int main()
     for (int j = 0; j < 8; j++)
         printf("%02x", key2[j]);
 
-    printf("\nCalculations for input\n");
+    printf("\nCalculations for input\n"); //3-DES. 라서 3번 수행
+
     printf("\nDES1\n");
 
     DES(input, key1, m1);
@@ -449,7 +455,7 @@ int main()
         input[i] = 0x08;
 
     
-    printf("\nCalculations for padding\n");
+    printf("\nCalculations for padding\n"); //패딩에도 3-DES 수행
     printf("\nDES1\n");
 
     DES(input, key1, m1);
@@ -459,7 +465,7 @@ int main()
     printf("\nDES3\n");
     DES(input, key1, m1);
     
-    memcpy(result + 8, input, sizeof(BYTE) * 8);
+    memcpy(result + 8, input, sizeof(BYTE) * 8); 
 
     
     printf("\nFinal result:\n");
